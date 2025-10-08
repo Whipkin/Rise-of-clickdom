@@ -34,14 +34,14 @@
   #upgradesContainer, #permUpgradesContainer {
     position: absolute;
   }
-  #upgradesContainer { right: 20px; top: 100px; width: 200px; }
-  #permUpgradesContainer { left: 20px; top: 100px; width: 200px; }
+  #upgradesContainer { right: 20px; top: 100px; width: 220px; }
+  #permUpgradesContainer { left: 20px; top: 100px; width: 220px; }
   .upgradeButton {
     display: block;
     margin: 10px 0;
     width: 100%;
     font-size: 16px;
-    animation: fadeIn 0.5s ease-out;
+    animation: fadeIn 0.3s ease-out;
   }
   @keyframes fadeIn {
     0% { transform: translateY(-20px); opacity: 0; }
@@ -53,13 +53,6 @@
     pointer-events: none;
     color: white;
   }
-  #pagination {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-  #pagination button { margin: 0 5px; font-size: 16px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -69,13 +62,13 @@
 <button id="clickButton">Click Me!</button>
 <div id="upgradesContainer"></div>
 <div id="permUpgradesContainer"></div>
-<div id="pagination"></div>
 
 <script>
 let clicks = 0;
 let clicksPerClick = 1;
 let autoClicks = 0;
 
+// Passive messages
 let passiveMessages = [
   "Keep clickin', you glorious bastard!",
   "Who the fuck let you get this powerful?",
@@ -89,153 +82,173 @@ let passiveMessages = [
   "The button is your bitch now."
 ];
 
-// ---- Generate 50 workers over 5 pages dynamically ----
-let upgradesPages = [];
-let baseCPS = [1,5,10,20,50]; // base CPS progression
-for(let p=0;p<5;p++){
-  let page = [];
-  for(let i=1;i<=10;i++){
-    let idx = p*10 + i;
-    page.push({name:`Worker ${idx}`, cost:50*idx, cps:baseCPS[p]*i, owned:0});
-  }
-  upgradesPages.push(page);
-}
+// Workers (25 total)
+let workers = [
+  {name:"Peasant", cost:50, cps:1, owned:0},
+  {name:"Farmer", cost:100, cps:2, owned:0},
+  {name:"Knight", cost:250, cps:5, owned:0},
+  {name:"Lord", cost:500, cps:10, owned:0},
+  {name:"Baron", cost:1000, cps:25, owned:0},
+  {name:"Duke", cost:2500, cps:50, owned:0},
+  {name:"Count", cost:5000, cps:100, owned:0},
+  {name:"Earl", cost:10000, cps:200, owned:0},
+  {name:"Wizard", cost:25000, cps:500, owned:0},
+  {name:"Sorcerer", cost:50000, cps:1000, owned:0},
+  {name:"Assassin", cost:100000, cps:2000, owned:0},
+  {name:"Gladiator", cost:250000, cps:5000, owned:0},
+  {name:"Titan", cost:500000, cps:10000, owned:0},
+  {name:"Phoenix", cost:1e6, cps:25000, owned:0},
+  {name:"Dragon", cost:5e6, cps:50000, owned:0},
+  {name:"Hydra", cost:1e7, cps:100000, owned:0},
+  {name:"Kraken", cost:5e7, cps:250000, owned:0},
+  {name:"Leviathan", cost:1e8, cps:500000, owned:0},
+  {name:"Archangel", cost:5e8, cps:1e6, owned:0},
+  {name:"Demon Lord", cost:1e9, cps:2e6, owned:0},
+  {name:"Celestial", cost:5e9, cps:5e6, owned:0},
+  {name:"Elder Dragon", cost:1e10, cps:1e7, owned:0},
+  {name:"God of Clicks", cost:5e10, cps:5e7, owned:0},
+  {name:"Time Weaver", cost:1e11, cps:1e8, owned:0},
+  {name:"Ultimate Phoenix", cost:5e11, cps:5e8, owned:0}
+];
 
-// ---- Generate 50 permanent upgrades ----
-let permanentUpgrades = [];
-for(let i=1;i<=50;i++){
-  let effects = ["double_clicks","double_auto","clicks_plus_5"];
-  permanentUpgrades.push({
-    name:`Upgrade ${i}`,
-    cost: 500*i,
-    effect: effects[i%effects.length],
-    bought:false
-  });
-}
+// Permanent upgrades (30 total)
+let permanentUpgrades = [
+  {name:"Extra Power!", cost:500, effect:"double_clicks", owned:0},
+  {name:"Super Click!", cost:2000, effect:"double_auto", owned:0},
+  {name:"Golden Fingers", cost:5000, effect:"clicks_plus_5", owned:0},
+  {name:"Finger God", cost:15000, effect:"double_clicks", owned:0},
+  {name:"Clickstorm", cost:40000, effect:"double_auto", owned:0},
+  {name:"Infinite Hands", cost:100000, effect:"clicks_plus_5", owned:0},
+  {name:"Chaos Fingers", cost:250000, effect:"double_clicks", owned:0},
+  {name:"Godspeed", cost:500000, effect:"double_auto", owned:0},
+  {name:"Clickocalypse", cost:1e6, effect:"clicks_plus_5", owned:0},
+  {name:"Finger Infinity", cost:5e6, effect:"double_clicks", owned:0},
+  {name:"Ultimate Clicker", cost:1e7, effect:"double_auto", owned:0},
+  {name:"Transcendence", cost:5e7, effect:"clicks_plus_5", owned:0},
+  {name:"Omnipotent Fingers", cost:1e8, effect:"double_clicks", owned:0},
+  {name:"Click God", cost:5e8, effect:"double_auto", owned:0},
+  {name:"Finger Eternal", cost:1e9, effect:"clicks_plus_5", owned:0},
+  {name:"Absolute Chaos", cost:5e9, effect:"double_clicks", owned:0},
+  {name:"Infinity Clicks", cost:1e10, effect:"double_auto", owned:0},
+  {name:"Legendary Fingers", cost:5e10, effect:"clicks_plus_5", owned:0},
+  {name:"Supreme Clicker", cost:1e11, effect:"double_clicks", owned:0},
+  {name:"Ultimate Chaos", cost:5e11, effect:"double_auto", owned:0},
+  {name:"Omnifinger", cost:1e12, effect:"clicks_plus_5", owned:0},
+  {name:"Eternal Click", cost:5e12, effect:"double_clicks", owned:0},
+  {name:"Finger Apocalypse", cost:1e13, effect:"double_auto", owned:0},
+  {name:"Godlike Clicking", cost:5e13, effect:"clicks_plus_5", owned:0},
+  {name:"Chaos God", cost:1e14, effect:"double_clicks", owned:0},
+  {name:"Ultimate Fingerstorm", cost:5e14, effect:"double_auto", owned:0},
+  {name:"Click Infinity", cost:1e15, effect:"clicks_plus_5", owned:0},
+  {name:"Fingerstorm", cost:5e15, effect:"double_clicks", owned:0},
+  {name:"Apocalyptic Fingers", cost:1e16, effect:"double_auto", owned:0}
+];
 
-let currentPage = 0;
+let upgradeDisplayIndex = 0;
 
-function updateUI() {
-  document.getElementById('clicksCounter').textContent = 'Clicks: ' + formatNumber(clicks);
-  document.getElementById('cpsCounter').textContent = 'CPS: ' + formatNumber(autoClicks);
+// --- Functions ---
+function updateUI(){
+  document.getElementById('clicksCounter').textContent='Clicks: '+formatNumber(clicks);
+  document.getElementById('cpsCounter').textContent='CPS: '+formatNumber(autoClicks);
   renderUpgrades();
   renderPermanentUpgrades();
 }
 
-function formatNumber(num) {
-  if(num > 1e12) return num.toExponential(2);
-  return Math.floor(num);
-}
+function formatNumber(num){return num>1e12?num.toExponential(2):Math.floor(num);}
 
-function spawnFloatingText(text) {
-  let label = document.createElement('div');
-  label.className = 'floatingText';
-  label.textContent = text;
-  label.style.left = Math.random() * window.innerWidth + 'px';
-  label.style.top = Math.random() * window.innerHeight + 'px';
-  label.style.color = `hsl(${Math.random()*360}, 100%, 75%)`;
+function spawnFloatingText(text){
+  let label=document.createElement('div');
+  label.className='floatingText';
+  label.textContent=text;
+  label.style.left=Math.random()*window.innerWidth+'px';
+  label.style.top=Math.random()*window.innerHeight+'px';
+  label.style.color=`hsl(${Math.random()*360},100%,75%)`;
   document.body.appendChild(label);
-  let y = parseFloat(label.style.top);
-  let anim = setInterval(()=>{
-    y -= 1;
-    label.style.top = y + 'px';
-    label.style.opacity -= 0.02;
-    if(label.style.opacity <= 0) { clearInterval(anim); document.body.removeChild(label);}
+  let y=parseFloat(label.style.top);
+  let opacity=1;
+  let anim=setInterval(()=>{
+    y-=1; opacity-=0.02;
+    label.style.top=y+'px';
+    label.style.opacity=opacity;
+    if(opacity<=0){clearInterval(anim); document.body.removeChild(label);}
   },20);
 }
 
-function showTopMessage(text, duration=2000) {
-  let msg = document.getElementById('topMessage');
-  msg.textContent = text;
+function showTopMessage(text,duration=2000){
+  let msg=document.getElementById('topMessage');
+  msg.textContent=text;
   setTimeout(()=>{msg.textContent='';},duration);
 }
 
-// ---- Upgrades ----
-function renderUpgrades() {
-  let container = document.getElementById('upgradesContainer');
-  container.innerHTML = '';
-  let page = upgradesPages[currentPage];
-  page.forEach(u=>{
-    if(u.owned < 5) {
-      let btn = document.createElement('button');
-      btn.className = 'upgradeButton';
-      btn.textContent = `${u.name} (${u.owned}) - ${formatNumber(u.cost)}`;
-      btn.onclick = ()=>{
-        if(clicks >= u.cost){
-          clicks -= u.cost;
-          u.owned++;
-          autoClicks += u.cps;
-          u.cost = Math.floor(u.cost * 1.75);
+// --- Render upgrades ---
+function renderUpgrades(){
+  let container=document.getElementById('upgradesContainer');
+  container.innerHTML='';
+  let displayed = workers.slice(upgradeDisplayIndex, upgradeDisplayIndex+3);
+  displayed.forEach(u=>{
+    if(u.owned<5){
+      let btn=document.createElement('button');
+      btn.className='upgradeButton';
+      btn.textContent=`${u.name} (${u.owned}) - ${formatNumber(u.cost)}`;
+      btn.onclick=()=>{
+        if(clicks>=u.cost){
+          clicks-=u.cost; u.owned++; autoClicks+=u.cps;
+          u.cost=Math.floor(u.cost*1.75);
           spawnFloatingText(`${u.name} bought!`);
-          if(u.owned==5) showTopMessage(`You maxed ${u.name}!`);
-          updateUI();
-        }
-      }
-      container.appendChild(btn);
-    }
-  });
-}
-
-function renderPermanentUpgrades() {
-  let container = document.getElementById('permUpgradesContainer');
-  container.innerHTML = '';
-  permanentUpgrades.forEach(p=>{
-    if(!p.bought) {
-      let btn = document.createElement('button');
-      btn.className = 'upgradeButton';
-      btn.textContent = `${p.name} - ${formatNumber(p.cost)}`;
-      btn.onclick = ()=>{
-        if(clicks >= p.cost){
-          clicks -= p.cost;
-          p.bought = true;
-          switch(p.effect){
-            case "double_clicks": clicksPerClick *= 2; showTopMessage("Clicks doubled!"); break;
-            case "double_auto": autoClicks *=2; showTopMessage("Auto clicks doubled!"); break;
-            case "clicks_plus_5": clicksPerClick +=5; showTopMessage("Clicks +5!"); break;
+          if(displayed.every(w=>w.owned>=5)){
+            upgradeDisplayIndex+=3;
+            showTopMessage("New workers unlocked!",2000);
           }
           updateUI();
         }
-      }
+      };
       container.appendChild(btn);
     }
   });
 }
 
-// ---- Pagination ----
-function renderPagination() {
-  let pag = document.getElementById('pagination');
-  pag.innerHTML = '';
-  for(let i=0;i<upgradesPages.length;i++){
-    let btn = document.createElement('button');
-    btn.textContent = 'Page '+(i+1);
-    btn.onclick = ()=>{currentPage=i; updateUI();}
-    pag.appendChild(btn);
-  }
+function renderPermanentUpgrades(){
+  let container=document.getElementById('permUpgradesContainer');
+  container.innerHTML='';
+  permanentUpgrades.forEach(p=>{
+    if(p.owned<1){
+      let btn=document.createElement('button');
+      btn.className='upgradeButton';
+      btn.textContent=`${p.name} - ${formatNumber(p.cost)}`;
+      btn.onclick=()=>{
+        if(clicks>=p.cost){
+          clicks-=p.cost; p.owned=1;
+          switch(p.effect){
+            case "double_clicks": clicksPerClick*=2; showTopMessage("Clicks doubled!"); break;
+            case "double_auto": autoClicks*=2; showTopMessage("Auto clicks doubled!"); break;
+            case "clicks_plus_5": clicksPerClick+=5; showTopMessage("Clicks +5!"); break;
+          }
+          updateUI();
+        }
+      };
+      container.appendChild(btn);
+    }
+  });
 }
 
-// ---- Click handler ----
-document.getElementById('clickButton').onclick = ()=>{
-  clicks += clicksPerClick;
+// --- Click button ---
+document.getElementById('clickButton').onclick=()=>{
+  clicks+=clicksPerClick;
   spawnFloatingText(`+${clicksPerClick} Clicks!`);
   updateUI();
-  if(clicks > 1e100){
-    clicks=0; autoClicks=0;
-    showTopMessage("God wants to say fuck you",4000);
-  }
+  if(clicks>1e100){ clicks=0; autoClicks=0; showTopMessage("God wants to say fuck you",4000);}
 };
 
-// ---- Passive messages ----
+// --- Passive messages ---
 setInterval(()=>{
-  if(Math.random() < 0.35) spawnFloatingText(passiveMessages[Math.floor(Math.random()*passiveMessages.length)]);
+  if(Math.random()<0.35) spawnFloatingText(passiveMessages[Math.floor(Math.random()*passiveMessages.length)]);
 },1000);
 
-// ---- Auto CPS ----
+// --- Auto CPS ---
 setInterval(()=>{
-  clicks += autoClicks;
-  updateUI();
+  clicks+=autoClicks; updateUI();
 },1000);
 
-renderPagination();
 updateUI();
 </script>
 </body>
