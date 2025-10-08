@@ -5,54 +5,16 @@
 <title>Rise of Clickdoms</title>
 <link rel="icon" type="image/png" href="Rise.png">
 <style>
-  body {
-    margin: 0;
-    padding: 0;
-    background-color: black;
-    color: white;
-    font-family: Arial, sans-serif;
-    overflow: hidden;
-  }
-  #clickButton {
-    position: absolute;
-    left: 50%;
-    top: 60%;
-    transform: translate(-50%, -50%);
-    width: 180px;
-    height: 80px;
-    font-size: 24px;
-    cursor: pointer;
-  }
-  #clicksCounter, #cpsCounter, #topMessage {
-    position: absolute;
-    font-size: 24px;
-    font-weight: bold;
-  }
-  #clicksCounter { left: 20px; top: 20px; }
-  #cpsCounter { left: 50%; top: 20px; transform: translateX(-50%); }
-  #topMessage { left: 50%; top: 60px; transform: translateX(-50%); }
-  #upgradesContainer, #permUpgradesContainer {
-    position: absolute;
-  }
-  #upgradesContainer { right: 20px; top: 100px; width: 220px; }
-  #permUpgradesContainer { left: 20px; top: 100px; width: 220px; }
-  .upgradeButton {
-    display: block;
-    margin: 10px 0;
-    width: 100%;
-    font-size: 16px;
-    animation: fadeIn 0.3s ease-out;
-  }
-  @keyframes fadeIn {
-    0% { transform: translateY(-20px); opacity: 0; }
-    100% { transform: translateY(0); opacity: 1; }
-  }
-  .floatingText {
-    position: absolute;
-    font-weight: bold;
-    pointer-events: none;
-    color: white;
-  }
+  body { margin:0; padding:0; background:black; color:white; font-family:Arial; overflow:hidden;}
+  #clickButton { position:absolute; left:50%; top:60%; transform:translate(-50%,-50%); width:180px; height:80px; font-size:24px; cursor:pointer;}
+  #clicksCounter, #cpsCounter, #topMessage { position:absolute; font-size:24px; font-weight:bold;}
+  #clicksCounter { left:20px; top:20px; } #cpsCounter { left:50%; top:20px; transform:translateX(-50%);}
+  #topMessage { left:50%; top:60px; transform:translateX(-50%);}
+  #upgradesContainer, #permUpgradesContainer, #workersContainer, #workerPages { position:absolute; width:220px; }
+  #upgradesContainer { right:20px; top:100px; } #permUpgradesContainer { left:20px; top:100px;}
+  #workersContainer { left:50%; top:150px; transform:translateX(-50%); } #workerPages { left:50%; top:450px; transform:translateX(-50%);}
+  .upgradeButton, .workerButton, .pageButton { display:block; margin:6px 0; width:100%; font-size:16px;}
+  .floatingText { position:absolute; font-weight:bold; pointer-events:none;}
 </style>
 </head>
 <body>
@@ -60,196 +22,120 @@
 <div id="cpsCounter">CPS: 0</div>
 <div id="topMessage"></div>
 <button id="clickButton">Click Me!</button>
+
 <div id="upgradesContainer"></div>
 <div id="permUpgradesContainer"></div>
+<div id="workersContainer"></div>
+<div id="workerPages"></div>
 
 <script>
 let clicks = 0;
 let clicksPerClick = 1;
 let autoClicks = 0;
+let upgradeDisplayIndex = 0;
+let workerPage = 0;
 
 // Passive messages
-let passiveMessages = [
-  "Keep clickin', you glorious bastard!",
-  "Who the fuck let you get this powerful?",
-  "God damn, your fingers on FIRE 🔥",
-  "Bro you click like rent’s due tomorrow.",
-  "Click harder, bitch!",
-  "Your mouse screaming but you don’t give a single fuck.",
-  "Each click slaps harder than your ex.",
-  "This clicker run will be written in history books.",
-  "Click click click, motherf***er!",
-  "The button is your bitch now."
-];
+let passiveMessages = ["Keep clickin'", "Your fingers are on FIRE!", "Click harder!","The button is your bitch now!"];
 
-// Workers (25 total)
-let workers = [
-  {name:"Peasant", cost:50, cps:1, owned:0},
-  {name:"Farmer", cost:100, cps:2, owned:0},
-  {name:"Knight", cost:250, cps:5, owned:0},
-  {name:"Lord", cost:500, cps:10, owned:0},
-  {name:"Baron", cost:1000, cps:25, owned:0},
-  {name:"Duke", cost:2500, cps:50, owned:0},
-  {name:"Count", cost:5000, cps:100, owned:0},
-  {name:"Earl", cost:10000, cps:200, owned:0},
-  {name:"Wizard", cost:25000, cps:500, owned:0},
-  {name:"Sorcerer", cost:50000, cps:1000, owned:0},
-  {name:"Assassin", cost:100000, cps:2000, owned:0},
-  {name:"Gladiator", cost:250000, cps:5000, owned:0},
-  {name:"Titan", cost:500000, cps:10000, owned:0},
-  {name:"Phoenix", cost:1e6, cps:25000, owned:0},
-  {name:"Dragon", cost:5e6, cps:50000, owned:0},
-  {name:"Hydra", cost:1e7, cps:100000, owned:0},
-  {name:"Kraken", cost:5e7, cps:250000, owned:0},
-  {name:"Leviathan", cost:1e8, cps:500000, owned:0},
-  {name:"Archangel", cost:5e8, cps:1e6, owned:0},
-  {name:"Demon Lord", cost:1e9, cps:2e6, owned:0},
-  {name:"Celestial", cost:5e9, cps:5e6, owned:0},
-  {name:"Elder Dragon", cost:1e10, cps:1e7, owned:0},
-  {name:"God of Clicks", cost:5e10, cps:5e7, owned:0},
-  {name:"Time Weaver", cost:1e11, cps:1e8, owned:0},
-  {name:"Ultimate Phoenix", cost:5e11, cps:5e8, owned:0}
-];
+// 25 workers
+let workers = [];
+let workerNames=["Peasant","Farmer","Knight","Lord","Baron","Duke","Count","Earl","Wizard","Sorcerer","Assassin","Gladiator","Titan","Phoenix","Dragon","Hydra","Kraken","Leviathan","Archangel","Demon Lord","Celestial","Elder Dragon","God of Clicks","Time Weaver","Ultimate Phoenix"];
+for(let i=0;i<25;i++){ workers.push({name:workerNames[i], cost:50*Math.pow(1.5,i), cps:1*Math.pow(1.7,i), owned:0});}
 
-// Permanent upgrades (30 total)
-let permanentUpgrades = [
-  {name:"Extra Power!", cost:500, effect:"double_clicks", owned:0},
-  {name:"Super Click!", cost:2000, effect:"double_auto", owned:0},
-  {name:"Golden Fingers", cost:5000, effect:"clicks_plus_5", owned:0},
-  {name:"Finger God", cost:15000, effect:"double_clicks", owned:0},
-  {name:"Clickstorm", cost:40000, effect:"double_auto", owned:0},
-  {name:"Infinite Hands", cost:100000, effect:"clicks_plus_5", owned:0},
-  {name:"Chaos Fingers", cost:250000, effect:"double_clicks", owned:0},
-  {name:"Godspeed", cost:500000, effect:"double_auto", owned:0},
-  {name:"Clickocalypse", cost:1e6, effect:"clicks_plus_5", owned:0},
-  {name:"Finger Infinity", cost:5e6, effect:"double_clicks", owned:0},
-  {name:"Ultimate Clicker", cost:1e7, effect:"double_auto", owned:0},
-  {name:"Transcendence", cost:5e7, effect:"clicks_plus_5", owned:0},
-  {name:"Omnipotent Fingers", cost:1e8, effect:"double_clicks", owned:0},
-  {name:"Click God", cost:5e8, effect:"double_auto", owned:0},
-  {name:"Finger Eternal", cost:1e9, effect:"clicks_plus_5", owned:0},
-  {name:"Absolute Chaos", cost:5e9, effect:"double_clicks", owned:0},
-  {name:"Infinity Clicks", cost:1e10, effect:"double_auto", owned:0},
-  {name:"Legendary Fingers", cost:5e10, effect:"clicks_plus_5", owned:0},
-  {name:"Supreme Clicker", cost:1e11, effect:"double_clicks", owned:0},
-  {name:"Ultimate Chaos", cost:5e11, effect:"double_auto", owned:0},
-  {name:"Omnifinger", cost:1e12, effect:"clicks_plus_5", owned:0},
-  {name:"Eternal Click", cost:5e12, effect:"double_clicks", owned:0},
-  {name:"Finger Apocalypse", cost:1e13, effect:"double_auto", owned:0},
-  {name:"Godlike Clicking", cost:5e13, effect:"clicks_plus_5", owned:0},
-  {name:"Chaos God", cost:1e14, effect:"double_clicks", owned:0},
-  {name:"Ultimate Fingerstorm", cost:5e14, effect:"double_auto", owned:0},
-  {name:"Click Infinity", cost:1e15, effect:"clicks_plus_5", owned:0},
-  {name:"Fingerstorm", cost:5e15, effect:"double_clicks", owned:0},
-  {name:"Apocalyptic Fingers", cost:1e16, effect:"double_auto", owned:0}
-];
-
-let upgradeDisplayIndex = 0;
-
-// --- Functions ---
-function updateUI(){
-  document.getElementById('clicksCounter').textContent='Clicks: '+formatNumber(clicks);
-  document.getElementById('cpsCounter').textContent='CPS: '+formatNumber(autoClicks);
-  renderUpgrades();
-  renderPermanentUpgrades();
+// 30 upgrades
+let permanentUpgrades=[];
+for(let i=0;i<30;i++){
+  permanentUpgrades.push({name:"Upgrade "+(i+1), cost:500*Math.pow(2,i), effect:i%3===0?"double_clicks":i%3===1?"double_auto":"clicks_plus_5", owned:0});
 }
 
-function formatNumber(num){return num>1e12?num.toExponential(2):Math.floor(num);}
-
-function spawnFloatingText(text){
-  let label=document.createElement('div');
-  label.className='floatingText';
-  label.textContent=text;
-  label.style.left=Math.random()*window.innerWidth+'px';
-  label.style.top=Math.random()*window.innerHeight+'px';
-  label.style.color=`hsl(${Math.random()*360},100%,75%)`;
-  document.body.appendChild(label);
-  let y=parseFloat(label.style.top);
-  let opacity=1;
-  let anim=setInterval(()=>{
-    y-=1; opacity-=0.02;
-    label.style.top=y+'px';
-    label.style.opacity=opacity;
-    if(opacity<=0){clearInterval(anim); document.body.removeChild(label);}
-  },20);
-}
-
-function showTopMessage(text,duration=2000){
-  let msg=document.getElementById('topMessage');
-  msg.textContent=text;
-  setTimeout(()=>{msg.textContent='';},duration);
-}
-
-// --- Render upgrades ---
-function renderUpgrades(){
-  let container=document.getElementById('upgradesContainer');
-  container.innerHTML='';
-  let displayed = workers.slice(upgradeDisplayIndex, upgradeDisplayIndex+3);
-  displayed.forEach(u=>{
-    if(u.owned<5){
-      let btn=document.createElement('button');
-      btn.className='upgradeButton';
-      btn.textContent=`${u.name} (${u.owned}) - ${formatNumber(u.cost)}`;
-      btn.onclick=()=>{
-        if(clicks>=u.cost){
-          clicks-=u.cost; u.owned++; autoClicks+=u.cps;
-          u.cost=Math.floor(u.cost*1.75);
-          spawnFloatingText(`${u.name} bought!`);
-          if(displayed.every(w=>w.owned>=5)){
-            upgradeDisplayIndex+=3;
-            showTopMessage("New workers unlocked!",2000);
-          }
-          updateUI();
-        }
-      };
-      container.appendChild(btn);
-    }
-  });
-}
-
-function renderPermanentUpgrades(){
-  let container=document.getElementById('permUpgradesContainer');
-  container.innerHTML='';
-  permanentUpgrades.forEach(p=>{
-    if(p.owned<1){
-      let btn=document.createElement('button');
-      btn.className='upgradeButton';
-      btn.textContent=`${p.name} - ${formatNumber(p.cost)}`;
-      btn.onclick=()=>{
-        if(clicks>=p.cost){
-          clicks-=p.cost; p.owned=1;
-          switch(p.effect){
-            case "double_clicks": clicksPerClick*=2; showTopMessage("Clicks doubled!"); break;
-            case "double_auto": autoClicks*=2; showTopMessage("Auto clicks doubled!"); break;
-            case "clicks_plus_5": clicksPerClick+=5; showTopMessage("Clicks +5!"); break;
-          }
-          updateUI();
-        }
-      };
-      container.appendChild(btn);
-    }
-  });
-}
-
-// --- Click button ---
+// --- Click ---
 document.getElementById('clickButton').onclick=()=>{
   clicks+=clicksPerClick;
   spawnFloatingText(`+${clicksPerClick} Clicks!`);
   updateUI();
   if(clicks>1e100){ clicks=0; autoClicks=0; showTopMessage("God wants to say fuck you",4000);}
-};
+}
 
-// --- Passive messages ---
-setInterval(()=>{
-  if(Math.random()<0.35) spawnFloatingText(passiveMessages[Math.floor(Math.random()*passiveMessages.length)]);
-},1000);
+// --- Floating Text ---
+function spawnFloatingText(text){
+  let label=document.createElement('div'); label.className='floatingText'; label.textContent=text;
+  label.style.left=Math.random()*window.innerWidth+'px';
+  label.style.top=Math.random()*window.innerHeight+'px';
+  document.body.appendChild(label);
+  let y=parseFloat(label.style.top), opacity=1;
+  let anim=setInterval(()=>{y-=1; opacity-=0.02; label.style.top=y+'px'; label.style.opacity=opacity; if(opacity<=0){clearInterval(anim); document.body.removeChild(label);}},20);
+}
+
+// --- Top Message ---
+function showTopMessage(text,duration=2000){ let msg=document.getElementById('topMessage'); msg.textContent=text; setTimeout(()=>{msg.textContent='';},duration);}
+
+// --- Render Upgrades (3 at a time) ---
+function renderUpgrades(){
+  let container=document.getElementById('upgradesContainer'); container.innerHTML='';
+  let displayed = permanentUpgrades.slice(upgradeDisplayIndex, upgradeDisplayIndex+3);
+  displayed.forEach(u=>{
+    if(u.owned<1){
+      let btn=document.createElement('button'); btn.className='upgradeButton';
+      btn.textContent=`${u.name} - ${formatNumber(u.cost)}`;
+      btn.onclick=()=>{
+        if(clicks>=u.cost){ clicks-=u.cost; u.owned=1;
+          switch(u.effect){case "double_clicks": clicksPerClick*=2; showTopMessage("Clicks doubled!"); break;
+            case "double_auto": autoClicks*=2; showTopMessage("Auto clicks doubled!"); break;
+            case "clicks_plus_5": clicksPerClick+=5; showTopMessage("Clicks +5!"); break;}
+          if(displayed.every(x=>x.owned>=1)){upgradeDisplayIndex+=3; showTopMessage("New upgrades unlocked!",2000);}
+          updateUI();
+        }
+      };
+      container.appendChild(btn);
+    }
+  });
+}
+
+// --- Render Workers in pages of 10 ---
+function renderWorkers(){
+  let container=document.getElementById('workersContainer'); container.innerHTML='';
+  let pageWorkers = workers.slice(workerPage*10,(workerPage+1)*10);
+  pageWorkers.forEach(w=>{
+    let btn=document.createElement('button'); btn.className='workerButton';
+    btn.textContent=`${w.name} (${w.owned}) - ${formatNumber(w.cost)}`;
+    btn.onclick=()=>{
+      if(clicks>=w.cost){ clicks-=w.cost; w.owned++; autoClicks+=w.cps; w.cost=Math.floor(w.cost*1.75); spawnFloatingText(`${w.name} hired!`); updateUI(); }
+    };
+    container.appendChild(btn);
+  });
+  renderWorkerPages();
+}
+
+function renderWorkerPages(){
+  let container=document.getElementById('workerPages'); container.innerHTML='';
+  let totalPages = Math.ceil(workers.length/10);
+  for(let i=0;i<totalPages;i++){
+    let btn=document.createElement('button'); btn.className='pageButton'; btn.textContent=`pg${i+1}`;
+    btn.onclick=()=>{ workerPage=i; renderWorkers();}
+    container.appendChild(btn);
+  }
+}
+
+// --- Update UI ---
+function updateUI(){
+  document.getElementById('clicksCounter').textContent='Clicks: '+formatNumber(clicks);
+  document.getElementById('cpsCounter').textContent='CPS: '+formatNumber(autoClicks);
+  renderUpgrades();
+  renderWorkers();
+}
+
+// --- Format Number ---
+function formatNumber(num){ return num>1e12?num.toExponential(2):Math.floor(num);}
+
+// --- Passive Messages ---
+setInterval(()=>{ if(Math.random()<0.35) spawnFloatingText(passiveMessages[Math.floor(Math.random()*passiveMessages.length)]);},1000);
 
 // --- Auto CPS ---
-setInterval(()=>{
-  clicks+=autoClicks; updateUI();
-},1000);
+setInterval(()=>{ clicks+=autoClicks; updateUI(); },1000);
 
 updateUI();
 </script>
 </body>
 </html>
+
