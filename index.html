@@ -1,51 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Rise of Clickdoms</title>
-<style>
-  body {
-    margin: 0;
-    padding: 0;
-    background-color: black;
-    color: white;
-    font-family: Arial, sans-serif;
-    overflow: hidden;
-  }
-  #clickButton {
-    position: absolute;
-    left: 50%;
-    top: 60%;
-    transform: translate(-50%, -50%);
-    width: 180px;
-    height: 80px;
-    font-size: 24px;
-    cursor: pointer;
-  }
-  #clicksCounter, #cpsCounter {
-    position: absolute;
-    font-size: 24px;
-    font-weight: bold;
-  }
-  #clicksCounter { left: 20px; top: 20px; }
-  #cpsCounter { left: 50%; top: 20px; transform: translateX(-50%); }
-  #upgradesContainer, #permUpgradesContainer {
-    position: absolute;
-  }
-  #upgradesContainer { right: 20px; top: 100px; width: 200px; }
-  #permUpgradesContainer { left: 20px; top: 100px; width: 200px; }
-  .upgradeButton {
-    display: block;
-    margin: 10px 0;
-    width: 100%;
-    font-size: 16px;
-  }
-  .floatingText {
-    position: absolute;
-    font-weight: bold;
-    pointer-events: none;
-  }
-</style>
+    <meta charset="UTF-8">
+    <title>Rise of Clickdoms</title>
+    <link rel="icon" type="image/png" href="Rise.png">
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: black;
+        color: white;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+      }
+      #clickButton {
+        position: absolute;
+        left: 50%;
+        top: 60%;
+        transform: translate(-50%, -50%);
+        width: 180px;
+        height: 80px;
+        font-size: 24px;
+        cursor: pointer;
+      }
+      #clicksCounter, #cpsCounter {
+        position: absolute;
+        font-size: 24px;
+        font-weight: bold;
+      }
+      #clicksCounter { left: 20px; top: 20px; }
+      #cpsCounter { left: 50%; top: 20px; transform: translateX(-50%); }
+      #upgradesContainer, #permUpgradesContainer {
+        position: absolute;
+      }
+      #upgradesContainer { right: 20px; top: 100px; width: 200px; }
+      #permUpgradesContainer { left: 20px; top: 100px; width: 200px; }
+      .upgradeButton {
+        display: block;
+        margin: 10px 0;
+        width: 100%;
+        font-size: 16px;
+      }
+      .floatingText {
+        position: absolute;
+        font-weight: bold;
+        pointer-events: none;
+      }
+    </style>
 </head>
 <body>
 
