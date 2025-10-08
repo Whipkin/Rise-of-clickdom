@@ -30,11 +30,19 @@
     }
     #clicksCounter { left: 20px; top: 20px; }
     #cpsCounter { left: 50%; top: 20px; transform: translateX(-50%); }
-    #upgradesContainer, #permUpgradesContainer {
+    #upgradesContainer {
       position: absolute;
+      right: 20px;
+      top: 100px;
+      width: 220px;
+      text-align: right;
     }
-    #upgradesContainer { right: 20px; top: 100px; width: 200px; }
-    #permUpgradesContainer { left: 20px; top: 100px; width: 200px; }
+    #permUpgradesContainer {
+      position: absolute;
+      left: 20px;
+      top: 100px;
+      width: 220px;
+    }
     .upgradeButton {
       display: block;
       margin: 10px 0;
@@ -45,26 +53,20 @@
       position: absolute;
       font-weight: bold;
       pointer-events: none;
+      animation: floatUp 1.5s ease-out forwards;
     }
-    #pageControls {
-      position: absolute;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-    #pageControls button {
-      margin: 0 10px;
-      font-size: 18px;
-      cursor: pointer;
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-80px); }
     }
     #cheaterText {
       position: absolute;
-      top: 50%;
+      font-size: 60px;
+      color: red;
+      font-weight: bold;
+      top: 40%;
       left: 50%;
       transform: translate(-50%, -50%);
-      color: red;
-      font-size: 48px;
-      font-weight: bold;
       display: none;
     }
   </style>
@@ -73,194 +75,190 @@
   <div id="clicksCounter">Clicks: 0</div>
   <div id="cpsCounter">CPS: 0</div>
   <button id="clickButton">Click Me!</button>
-  <div id="permUpgradesContainer"></div>
   <div id="upgradesContainer"></div>
-  <div id="pageControls">
-    <button id="prevPage">⬅ Prev</button>
-    <span id="pageIndicator">Page 1</span>
-    <button id="nextPage">Next ➡</button>
-  </div>
+  <div id="permUpgradesContainer"></div>
   <div id="cheaterText">CHEATER</div>
 
   <script>
     let clicks = 0;
     let cps = 0;
-    let upgradesPage = 0;
-    let currentUpgradeSet = 0;
+    let clickPower = 1;
+    let autoClickInterval;
+    let page = 0;
 
-    const clickButton = document.getElementById("clickButton");
+    const workers = [
+      { name: "Peasant", cost: 50, cps: 1, owned: 0 },
+      { name: "Knight", cost: 250, cps: 5, owned: 0 },
+      { name: "Lord", cost: 1000, cps: 20, owned: 0 },
+      { name: "Grandma", cost: 5000, cps: 250, owned: 0 },
+      { name: "Wizard", cost: 10000, cps: 600, owned: 0 },
+      { name: "Baron", cost: 25000, cps: 1200, owned: 0 },
+      { name: "King", cost: 50000, cps: 4000, owned: 0 },
+      { name: "Emperor", cost: 100000, cps: 8000, owned: 0 },
+      { name: "The All Mighty", cost: 1000000, cps: 50000, owned: 0 },
+      { name: "God’s Janitor", cost: 5000000, cps: 200000, owned: 0 },
+      { name: "Click Demon", cost: 20000000, cps: 800000, owned: 0 },
+      { name: "Reality Hacker", cost: 100000000, cps: 5000000, owned: 0 },
+      { name: "The Core", cost: 1000000000, cps: 10000000, owned: 0 },
+      { name: "The Final", cost: 10000000000, cps: 50000000, owned: 0 },
+      { name: "You Can’t Get This", cost: 99999999999, cps: 100000000, owned: 0 }
+    ];
+
+    const upgrades = [
+      { name: "Extra Power!", cost: 500, effect: () => clickPower *= 2, bought: false },
+      { name: "Super Click!", cost: 2000, effect: () => cps *= 2, bought: false },
+      { name: "Golden Fingers", cost: 5000, effect: () => clickPower += 5, bought: false }
+    ];
+
+    const passiveMessages = [
+      "Keep clickin’, you absolute menace!",
+      "You’re a clicking machine.",
+      "Holy shit your mouse is crying.",
+      "Click click click, god himself’s watching.",
+      "You broke the f**king sound barrier again.",
+      "The button’s filing for workers' comp.",
+      "STOP– no wait, keep going."
+    ];
+
+    const clickBtn = document.getElementById("clickButton");
     const clicksCounter = document.getElementById("clicksCounter");
     const cpsCounter = document.getElementById("cpsCounter");
-    const permUpgradesContainer = document.getElementById("permUpgradesContainer");
     const upgradesContainer = document.getElementById("upgradesContainer");
+    const permUpgradesContainer = document.getElementById("permUpgradesContainer");
     const cheaterText = document.getElementById("cheaterText");
-    const pageIndicator = document.getElementById("pageIndicator");
 
-    const workersPages = [
-      [
-        { name: "Peasant", baseCost: 10, cps: 1 },
-        { name: "Knight", baseCost: 50, cps: 5 },
-        { name: "Lord", baseCost: 200, cps: 10 },
-        { name: "Wizard", baseCost: 1000, cps: 25 },
-        { name: "Dragon", baseCost: 5000, cps: 100 },
-      ],
-      [
-        { name: "Miner", baseCost: 20000, cps: 250 },
-        { name: "Engineer", baseCost: 100000, cps: 1000 },
-        { name: "King", baseCost: 500000, cps: 2500 },
-        { name: "Queen", baseCost: 1000000, cps: 5000 },
-        { name: "God", baseCost: 5000000, cps: 25000 },
-      ],
-      [
-        { name: "AI", baseCost: 10000000, cps: 50000 },
-        { name: "Void Entity", baseCost: 50000000, cps: 200000 },
-        { name: "Time Lord", baseCost: 250000000, cps: 1000000 },
-        { name: "Reality Bender", baseCost: 1000000000, cps: 5000000 },
-        { name: "Eternal One", baseCost: 9999999999, cps: 10000000 },
-      ]
-    ];
-
-    const upgradeSets = [
-      [
-        { name: "Better Clicks", cost: 100, effect: () => clickPower *= 2 },
-        { name: "Stronger Fingers", cost: 500, effect: () => clickPower *= 3 },
-        { name: "Click God Mode", cost: 1000, effect: () => clickPower *= 5 }
-      ],
-      [
-        { name: "Auto Clicker", cost: 5000, effect: () => cps += 50 },
-        { name: "Click Bot", cost: 10000, effect: () => cps += 100 },
-        { name: "Finger Army", cost: 20000, effect: () => cps += 300 }
-      ],
-      [
-        { name: "Time Hack", cost: 50000, effect: () => cps *= 2 },
-        { name: "Reality Warp", cost: 100000, effect: () => cps *= 3 },
-        { name: "Infinity Boost", cost: 500000, effect: () => cps *= 10 }
-      ]
-    ];
-
-    let clickPower = 1;
-    const workers = {};
-
-    function createWorkers() {
-      upgradesContainer.innerHTML = "";
-      const page = workersPages[upgradesPage];
-      page.forEach(worker => {
-        if (!workers[worker.name]) {
-          workers[worker.name] = { count: 0, ...worker };
-        }
-        const btn = document.createElement("button");
-        btn.className = "upgradeButton";
-        btn.textContent = `${worker.name} (${workers[worker.name].count}) - ${worker.baseCost}`;
-        btn.onclick = () => buyWorker(worker.name);
-        upgradesContainer.appendChild(btn);
-      });
-    }
-
-    function createUpgrades() {
-      permUpgradesContainer.innerHTML = "";
-      upgradeSets[currentUpgradeSet].forEach((upgrade, i) => {
-        const btn = document.createElement("button");
-        btn.className = "upgradeButton";
-        btn.textContent = `${upgrade.name} - ${upgrade.cost}`;
-        btn.onclick = () => buyUpgrade(i);
-        permUpgradesContainer.appendChild(btn);
-      });
-    }
-
-    function buyWorker(name) {
-      const worker = workers[name];
-      if (clicks >= worker.baseCost) {
-        clicks -= worker.baseCost;
-        worker.count++;
-        cps += worker.cps;
-        worker.baseCost = Math.ceil(worker.baseCost * 1.25);
-        updateDisplay();
-        createWorkers();
-      }
-    }
-
-    function buyUpgrade(i) {
-      const upgrade = upgradeSets[currentUpgradeSet][i];
-      if (clicks >= upgrade.cost) {
-        clicks -= upgrade.cost;
-        upgrade.effect();
-        upgradeSets[currentUpgradeSet].splice(i, 1);
-        updateDisplay();
-        createUpgrades();
-        if (upgradeSets[currentUpgradeSet].length === 0 && currentUpgradeSet < upgradeSets.length - 1) {
-          currentUpgradeSet++;
-          createUpgrades();
-        }
-      }
-    }
-
-    function updateDisplay() {
+    function updateCounters() {
       clicksCounter.textContent = `Clicks: ${Math.floor(clicks)}`;
       cpsCounter.textContent = `CPS: ${Math.floor(cps)}`;
     }
 
-    function clickEvent(e) {
-      clicks += clickPower;
-      updateDisplay();
-      spawnText(e.pageX, e.pageY, `+${clickPower}`);
+    function spawnFloatingText(text) {
+      const float = document.createElement("div");
+      float.classList.add("floatingText");
+      float.style.left = Math.random() * window.innerWidth + "px";
+      float.style.top = Math.random() * window.innerHeight + "px";
+      float.style.color = `hsl(${Math.random() * 360}, 100%, 70%)`;
+      float.textContent = text;
+      document.body.appendChild(float);
+      setTimeout(() => float.remove(), 1500);
     }
 
-    function spawnText(x, y, text) {
-      const div = document.createElement("div");
-      div.textContent = text;
-      div.className = "floatingText";
-      div.style.left = x + "px";
-      div.style.top = y + "px";
-      document.body.appendChild(div);
-      setTimeout(() => div.remove(), 700);
-    }
-
-    clickButton.addEventListener("click", clickEvent);
-
-    setInterval(() => {
-      clicks += cps / 10;
-      updateDisplay();
-      if (clicks > 1e+60) {
-        clicks = 0;
-        cps = 0;
-        Object.keys(workers).forEach(name => workers[name].count = 0);
-        createWorkers();
-        createUpgrades();
-        showCheater();
+    function createWorkerButtons() {
+      upgradesContainer.innerHTML = "";
+      const start = page * 5;
+      const end = Math.min(start + 5, workers.length);
+      for (let i = start; i < end; i++) {
+        const w = workers[i];
+        const btn = document.createElement("button");
+        btn.className = "upgradeButton";
+        btn.textContent = `${w.name} (${w.owned}) - ${Math.floor(w.cost)}`;
+        btn.onclick = () => buyWorker(i);
+        upgradesContainer.appendChild(btn);
       }
-    }, 100);
+      const nextBtn = document.createElement("button");
+      nextBtn.className = "upgradeButton";
+      nextBtn.textContent = "Next Page →";
+      nextBtn.onclick = nextPage;
+      upgradesContainer.appendChild(nextBtn);
+    }
 
-    function showCheater() {
-      cheaterText.style.display = "block";
-      let flashes = 0;
-      const interval = setInterval(() => {
-        cheaterText.style.display = (cheaterText.style.display === "none") ? "block" : "none";
-        flashes++;
-        if (flashes > 4) {
-          clearInterval(interval);
-          cheaterText.style.display = "none";
-        }
+    function createPermUpgrades() {
+      permUpgradesContainer.innerHTML = "";
+      for (let up of upgrades) {
+        const btn = document.createElement("button");
+        btn.className = "upgradeButton";
+        btn.textContent = `${up.name} - ${up.cost}`;
+        btn.disabled = up.bought;
+        btn.onclick = () => buyUpgrade(up);
+        permUpgradesContainer.appendChild(btn);
+      }
+    }
+
+    function buyWorker(index) {
+      const w = workers[index];
+      if (clicks >= w.cost) {
+        clicks -= w.cost;
+        w.owned++;
+        cps += w.cps;
+        w.cost = Math.floor(w.cost * 1.25);
+        spawnFloatingText(`${w.name} bought!`);
+        updateCounters();
+        createWorkerButtons();
+      }
+    }
+
+    function buyUpgrade(up) {
+      if (clicks >= up.cost && !up.bought) {
+        clicks -= up.cost;
+        up.bought = true;
+        up.effect();
+        spawnFloatingText(`${up.name} activated!`);
+        updateCounters();
+        createPermUpgrades();
+      }
+    }
+
+    function nextPage() {
+      page++;
+      if (page * 5 >= workers.length) page = 0;
+      createWorkerButtons();
+    }
+
+    clickBtn.addEventListener("click", () => {
+      clicks += clickPower;
+      spawnFloatingText(`+${clickPower}`);
+      updateCounters();
+    });
+
+    function passiveSpawner() {
+      if (Math.random() < 0.3) {
+        spawnFloatingText(passiveMessages[Math.floor(Math.random() * passiveMessages.length)]);
+      }
+    }
+
+    function startAutoClicks() {
+      clearInterval(autoClickInterval);
+      autoClickInterval = setInterval(() => {
+        clicks += cps / 2;
+        updateCounters();
       }, 500);
     }
 
-    document.getElementById("nextPage").onclick = () => {
-      if (upgradesPage < workersPages.length - 1) upgradesPage++;
-      else upgradesPage = 0;
-      pageIndicator.textContent = `Page ${upgradesPage + 1}`;
-      createWorkers();
-    };
+    // Anti-Cheat check
+    function checkForCheating() {
+      if (clicks > 1e+20 || cps > 1e+15) {
+        cheaterText.style.display = "block";
+        const flash = setInterval(() => {
+          cheaterText.style.display = cheaterText.style.display === "none" ? "block" : "none";
+        }, 500);
+        setTimeout(() => {
+          clearInterval(flash);
+          cheaterText.style.display = "none";
+          resetGame();
+        }, 2000);
+      }
+    }
 
-    document.getElementById("prevPage").onclick = () => {
-      if (upgradesPage > 0) upgradesPage--;
-      else upgradesPage = workersPages.length - 1;
-      pageIndicator.textContent = `Page ${upgradesPage + 1}`;
-      createWorkers();
-    };
+    function resetGame() {
+      clicks = 0;
+      cps = 0;
+      clickPower = 1;
+      for (let w of workers) {
+        w.owned = 0;
+        w.cost = w.cost / Math.pow(1.25, w.owned);
+      }
+      for (let up of upgrades) up.bought = false;
+      updateCounters();
+      createWorkerButtons();
+      createPermUpgrades();
+    }
 
-    createWorkers();
-    createUpgrades();
-    updateDisplay();
+    setInterval(passiveSpawner, 2000);
+    setInterval(checkForCheating, 1000);
+    createWorkerButtons();
+    createPermUpgrades();
+    startAutoClicks();
+    updateCounters();
   </script>
 </body>
 </html>
-
