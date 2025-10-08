@@ -103,18 +103,22 @@ function spawnFloatingText(text) {
   ft.style.left = Math.random() * window.innerWidth + 'px';
   ft.style.top = Math.random() * window.innerHeight + 'px';
   ft.style.color = `rgb(${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)})`;
-  
+  ft.style.opacity = 1;
+
   let pos = ft.offsetTop;
+  let opacity = 1;
   const interval = setInterval(() => {
-    pos -= 2;
+    pos -= 1;               // move up slowly
+    opacity -= 0.005;        // fade slower
     ft.style.top = pos + 'px';
-    ft.style.opacity -= 0.02;
-    if(pos < -50) {
+    ft.style.opacity = opacity;
+    if(opacity <= 0) {       // remove when invisible
       clearInterval(interval);
       ft.remove();
     }
-  }, 20);
+  }, 16); // roughly 60fps
 }
+
 
 // Update UI
 function updateUI() {
