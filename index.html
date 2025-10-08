@@ -1,141 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Rise of Clickdoms</title>
-<link rel="icon" type="image/png" href="Rise.png">
-<style>
-  body { margin:0; padding:0; background:black; color:white; font-family:Arial; overflow:hidden;}
-  #clickButton { position:absolute; left:50%; top:60%; transform:translate(-50%,-50%); width:180px; height:80px; font-size:24px; cursor:pointer;}
-  #clicksCounter, #cpsCounter, #topMessage { position:absolute; font-size:24px; font-weight:bold;}
-  #clicksCounter { left:20px; top:20px; } #cpsCounter { left:50%; top:20px; transform:translateX(-50%);}
-  #topMessage { left:50%; top:60px; transform:translateX(-50%);}
-  #upgradesContainer, #permUpgradesContainer, #workersContainer, #workerPages { position:absolute; width:220px; }
-  #upgradesContainer { right:20px; top:100px; } #permUpgradesContainer { left:20px; top:100px;}
-  #workersContainer { left:5%; top:150px; transform:translateX(-50%); } #workerPages { left:5%; top:450px; transform:translateX(-50%);}
-  .upgradeButton, .workerButton, .pageButton { display:block; margin:6px 0; width:100%; font-size:16px;}
-  .floatingText { position:absolute; font-weight:bold; pointer-events:none;}
-</style>
+  <meta charset="UTF-8">
+  <title>Rise of Clickdoms</title>
+  <link rel="icon" type="image/png" href="Rise.png">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    #clickButton {
+      position: absolute;
+      left: 50%;
+      top: 60%;
+      transform: translate(-50%, -50%);
+      width: 180px;
+      height: 80px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    #clicksCounter, #cpsCounter {
+      position: absolute;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    #clicksCounter { left: 20px; top: 20px; }
+    #cpsCounter { left: 50%; top: 20px; transform: translateX(-50%); }
+    #upgradesContainer, #permUpgradesContainer {
+      position: absolute;
+    }
+    #upgradesContainer { right: 20px; top: 100px; width: 200px; }
+    #permUpgradesContainer { left: 20px; top: 100px; width: 200px; }
+    .upgradeButton {
+      display: block;
+      margin: 10px 0;
+      width: 100%;
+      font-size: 16px;
+    }
+    .floatingText {
+      position: absolute;
+      font-weight: bold;
+      pointer-events: none;
+    }
+    #cheaterText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      color: red;
+      font-weight: bold;
+      display: none;
+    }
+  </style>
 </head>
 <body>
-<div id="clicksCounter">Clicks: 0</div>
-<div id="cpsCounter">CPS: 0</div>
-<div id="topMessage"></div>
-<button id="clickButton">Click Me!</button>
+  <div id="clicksCounter">Clicks: 0</div>
+  <div id="cpsCounter">CPS: 0</div>
+  <button id="clickButton">Click Me!</button>
 
-<div id="upgradesContainer"></div>
-<div id="permUpgradesContainer"></div>
-<div id="workersContainer"></div>
-<div id="workerPages"></div>
+  <div id="upgradesContainer"></div>
+  <div id="permUpgradesContainer"></div>
+  <div id="cheaterText">CHEATER</div>
 
-<script>
-let clicks = 0;
-let clicksPerClick = 1;
-let autoClicks = 0;
-let upgradeDisplayIndex = 0;
-let workerPage = 0;
+  <script>
+    let clicks = 0;
+    let cps = 0;
+    let clicksPerClick = 1;
+    let passiveMessages = [
+      "Keep clickin', you glorious bastard!",
+      "Who the fuck let you get this powerful?",
+      "God damn, your fingers on FIRE 🔥",
+      "Bro you click like rent’s due tomorrow.",
+      "Click harder, bitch!",
+      "The All Mighty said ‘DAMN!’ after that click.",
+      "Each click slaps harder than your ex.",
+      "You’re clicking like you hate happiness.",
+      "Your mouse literally combusted. Worth it.",
+      "The button is your bitch now."
+    ];
 
-// Passive messages
-let passiveMessages = ["Keep clickin'", "Your fingers are on FIRE!", "Click harder!","The button is your bitch now!"];
-
-// 25 workers
-let workers = [];
-let workerNames=["Peasant","Farmer","Knight","Lord","Baron","Duke","Count","Earl","Wizard","Sorcerer","Assassin","Gladiator","Titan","Phoenix","Dragon","Hydra","Kraken","Leviathan","Archangel","Demon Lord","Celestial","Elder Dragon","God of Clicks","Time Weaver","Ultimate Phoenix"];
-for(let i=0;i<25;i++){ workers.push({name:workerNames[i], cost:50*Math.pow(1.5,i), cps:1*Math.pow(1.7,i), owned:0});}
-
-// 30 upgrades
-let permanentUpgrades=[];
-for(let i=0;i<30;i++){
-  permanentUpgrades.push({name:"Upgrade "+(i+1), cost:500*Math.pow(2,i), effect:i%3===0?"double_clicks":i%3===1?"double_auto":"clicks_plus_5", owned:0});
-}
-
-// --- Click ---
-document.getElementById('clickButton').onclick=()=>{
-  clicks+=clicksPerClick;
-  spawnFloatingText(`+${clicksPerClick} Clicks!`);
-  updateUI();
-  if(clicks>1e100){ clicks=0; autoClicks=0; showTopMessage("God wants to say fuck you",4000);}
-}
-
-// --- Floating Text ---
-function spawnFloatingText(text){
-  let label=document.createElement('div'); label.className='floatingText'; label.textContent=text;
-  label.style.left=Math.random()*window.innerWidth+'px';
-  label.style.top=Math.random()*window.innerHeight+'px';
-  document.body.appendChild(label);
-  let y=parseFloat(label.style.top), opacity=1;
-  let anim=setInterval(()=>{y-=1; opacity-=0.02; label.style.top=y+'px'; label.style.opacity=opacity; if(opacity<=0){clearInterval(anim); document.body.removeChild(label);}},20);
-}
-
-// --- Top Message ---
-function showTopMessage(text,duration=2000){ let msg=document.getElementById('topMessage'); msg.textContent=text; setTimeout(()=>{msg.textContent='';},duration);}
-
-// --- Render Upgrades (3 at a time) ---
-function renderUpgrades(){
-  let container=document.getElementById('upgradesContainer'); container.innerHTML='';
-  let displayed = permanentUpgrades.slice(upgradeDisplayIndex, upgradeDisplayIndex+3);
-  displayed.forEach(u=>{
-    if(u.owned<1){
-      let btn=document.createElement('button'); btn.className='upgradeButton';
-      btn.textContent=`${u.name} - ${formatNumber(u.cost)}`;
-      btn.onclick=()=>{
-        if(clicks>=u.cost){ clicks-=u.cost; u.owned=1;
-          switch(u.effect){case "double_clicks": clicksPerClick*=2; showTopMessage("Clicks doubled!"); break;
-            case "double_auto": autoClicks*=2; showTopMessage("Auto clicks doubled!"); break;
-            case "clicks_plus_5": clicksPerClick+=5; showTopMessage("Clicks +5!"); break;}
-          if(displayed.every(x=>x.owned>=1)){upgradeDisplayIndex+=3; showTopMessage("New upgrades unlocked!",2000);}
-          updateUI();
-        }
-      };
-      container.appendChild(btn);
-    }
-  });
-}
-
-// --- Render Workers in pages of 10 ---
-function renderWorkers(){
-  let container=document.getElementById('workersContainer'); container.innerHTML='';
-  let pageWorkers = workers.slice(workerPage*10,(workerPage+1)*10);
-  pageWorkers.forEach(w=>{
-    let btn=document.createElement('button'); btn.className='workerButton';
-    btn.textContent=`${w.name} (${w.owned}) - ${formatNumber(w.cost)}`;
-    btn.onclick=()=>{
-      if(clicks>=w.cost){ clicks-=w.cost; w.owned++; autoClicks+=w.cps; w.cost=Math.floor(w.cost*1.75); spawnFloatingText(`${w.name} hired!`); updateUI(); }
+    let upgrades = {
+      "Peasant": { cost: 50, cps: 1, owned: 0, scale: 1.25 },
+      "Knight": { cost: 250, cps: 5, owned: 0, scale: 1.25 },
+      "Lord": { cost: 1000, cps: 20, owned: 0, scale: 1.25 },
+      "Grandma": { cost: 5000, cps: 250, owned: 0, scale: 1.25 },
+      "The All Mighty": { cost: 10000, cps: 5000, owned: 0, scale: 1.25 }
     };
-    container.appendChild(btn);
-  });
-  renderWorkerPages();
-}
 
-function renderWorkerPages(){
-  let container=document.getElementById('workerPages'); container.innerHTML='';
-  let totalPages = Math.ceil(workers.length/10);
-  for(let i=0;i<totalPages;i++){
-    let btn=document.createElement('button'); btn.className='pageButton'; btn.textContent=`pg${i+1}`;
-    btn.onclick=()=>{ workerPage=i; renderWorkers();}
-    container.appendChild(btn);
-  }
-}
+    let permUpgrades = {
+      "Extra Power!": { cost: 500, effect: "double_clicks" },
+      "Super Click!": { cost: 2000, effect: "double_auto" },
+      "Golden Fingers": { cost: 5000, effect: "clicks_plus_5" }
+    };
 
-// --- Update UI ---
-function updateUI(){
-  document.getElementById('clicksCounter').textContent='Clicks: '+formatNumber(clicks);
-  document.getElementById('cpsCounter').textContent='CPS: '+formatNumber(autoClicks);
-  renderUpgrades();
-  renderWorkers();
-}
+    const clicksCounter = document.getElementById("clicksCounter");
+    const cpsCounter = document.getElementById("cpsCounter");
+    const clickButton = document.getElementById("clickButton");
+    const upgradesContainer = document.getElementById("upgradesContainer");
+    const permUpgradesContainer = document.getElementById("permUpgradesContainer");
+    const cheaterText = document.getElementById("cheaterText");
 
-// --- Format Number ---
-function formatNumber(num){ return num>1e12?num.toExponential(2):Math.floor(num);}
+    clickButton.onclick = () => {
+      clicks += clicksPerClick;
+      updateUI();
+      spawnFloatingText(`+${clicksPerClick}`);
+    };
 
-// --- Passive Messages ---
-setInterval(()=>{ if(Math.random()<0.35) spawnFloatingText(passiveMessages[Math.floor(Math.random()*passiveMessages.length)]);},1000);
+    function spawnFloatingText(text) {
+      const el = document.createElement("div");
+      el.textContent = text;
+      el.className = "floatingText";
+      el.style.left = Math.random() * window.innerWidth + "px";
+      el.style.top = Math.random() * window.innerHeight + "px";
+      el.style.color = `hsl(${Math.random() * 360}, 100%, 70%)`;
+      document.body.appendChild(el);
 
-// --- Auto CPS ---
-setInterval(()=>{ clicks+=autoClicks; updateUI(); },1000);
+      const anim = el.animate(
+        [{ transform: "translateY(0px)", opacity: 1 }, { transform: "translateY(-80px)", opacity: 0 }],
+        { duration: 1500, easing: "ease-out" }
+      );
+      anim.onfinish = () => el.remove();
+    }
 
-updateUI();
-</script>
+    function updateUI() {
+      if (!isFinite(clicks)) {
+        handleCheater();
+        return;
+      }
+      clicksCounter.textContent = `Clicks: ${Math.floor(clicks)}`;
+      cpsCounter.textContent = `CPS: ${cps}`;
+    }
+
+    function handleCheater() {
+      clicks = 0;
+      cps = 0;
+      cheaterText.style.display = "block";
+      let visible = true;
+      let blink = setInterval(() => {
+        cheaterText.style.display = visible ? "none" : "block";
+        visible = !visible;
+      }, 250);
+      setTimeout(() => {
+        clearInterval(blink);
+        cheaterText.style.display = "none";
+        updateUI();
+      }, 2000);
+    }
+
+    function createUpgradeButtons() {
+      for (let name in upgrades) {
+        const btn = document.createElement("button");
+        btn.textContent = `${name} (${upgrades[name].owned}) - ${upgrades[name].cost}`;
+        btn.className = "upgradeButton";
+        btn.onclick = () => buyUpgrade(name);
+        upgradesContainer.appendChild(btn);
+      }
+      for (let name in permUpgrades) {
+        const btn = document.createElement("button");
+        btn.textContent = `${name} - ${permUpgrades[name].cost}`;
+        btn.className = "upgradeButton";
+        btn.onclick = () => buyPermUpgrade(name);
+        permUpgradesContainer.appendChild(btn);
+      }
+    }
+
+    function buyUpgrade(name) {
+      let u = upgrades[name];
+      if (clicks >= u.cost) {
+        clicks -= u.cost;
+        u.owned++;
+        cps += u.cps;
+        u.cost = Math.floor(u.cost * u.scale);
+        updateUI();
+        refreshButtons();
+        spawnFloatingText(`${name} bought!`);
+      }
+    }
+
+    function buyPermUpgrade(name) {
+      let p = permUpgrades[name];
+      if (clicks >= p.cost) {
+        clicks -= p.cost;
+        switch (p.effect) {
+          case "double_clicks":
+            clicksPerClick *= 2;
+            break;
+          case "double_auto":
+            cps *= 2;
+            break;
+          case "clicks_plus_5":
+            clicksPerClick += 5;
+            break;
+        }
+        p.cost = Math.floor(p.cost * 1.75);
+        updateUI();
+        refreshButtons();
+        spawnFloatingText(`${name} bought!`);
+      }
+    }
+
+    function refreshButtons() {
+      upgradesContainer.innerHTML = "";
+      permUpgradesContainer.innerHTML = "";
+      createUpgradeButtons();
+    }
+
+    setInterval(() => {
+      clicks += cps / 10;
+      if (Math.random() < 0.15) {
+        spawnFloatingText(passiveMessages[Math.floor(Math.random() * passiveMessages.length)]);
+      }
+      updateUI();
+    }, 100);
+
+    createUpgradeButtons();
+    updateUI();
+  </script>
 </body>
 </html>
-
