@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Rise of Clickdoms</title>
+<style>
+  body { margin: 0; font-family: sans-serif; overflow: hidden; background: #111; color: #fff; }
+  #clickButton { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 30px 50px; font-size: 24px; }
+  #labelCPS { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 20px; }
+  #upgrades, #permanentUpgrades { position: absolute; top: 100px; width: 200px; }
+  #upgrades { right: 20px; }
+  #permanentUpgrades { left: 20px; }
+  .upgradeBtn { display: block; margin: 10px 0; padding: 8px; font-size: 16px; cursor: pointer; }
+  .floatingText { position: absolute; font-weight: bold; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<div id="labelCPS">CPS: 0</div>
+<button id="clickButton">CLICK ME</button>
+
+<div id="upgrades"></div>
+<div id="permanentUpgrades"></div>
+
+<script>
+let totalClicks = 0;
+let clicksPerClick = 1;
+let autoClicks = 0;
+
+const upgrades = {
+  "Peasant": {cost: 50, cps: 1, owned: 0},
+  "Knight": {cost: 250, cps: 5, owned: 0},
+  "Lord": {cost: 1000, cps: 20, owned: 0},
+  "Grandma": {cost: 5000, cps: 250, owned: 0},
+  "The All Mighty": {cost: 10000, cps: 5000, owned: 0}
+};
+
+const permanentUpgrades = {
+  "Extra Power!": {cost: 500, effect: "double_clicks", bought: false},
+  "Super Click!": {cost: 2000, effect: "double_auto", bought: false},
+  "Golden Fingers": {cost: 5000, effect: "clicks_plus_5", bought: false}
+};
+
+const passiveMessages = [
+  "Keep clickin', you glorious bastard!",
+  "Who the fuck let you get this powerful?",
+  "God damn, your fingers on FIRE 🔥",
+  "Bro you click like rent’s due tomorrow.",
+  "Click harder, bitch!",
+  "Each click slaps harder than your ex.",
+  "Click click click, motherf***er!",
+  "The button is your bitch now."
+];
+
+const clickButton = document.getElementById('clickButton');
+const labelCPS = document.getElementById('labelCPS');
+const upgradesDiv = document.getElementById('upgrades');
+const permUpDiv = document.getElementById('permanentUpgrades');
+
+function updateUI() {
+  labelCPS.textContent = "CPS: " + autoClicks;
+  upgradesDiv.innerHTML = "";
+  for (let name in upgrades) {
+    const up = upgrades[name];
+    const btn = document.createElement('button');
+    btn.className = 'upgradeBtn';
+    btn.textContent = `${name} (${up.owned}) - ${up.cost}`;
+    btn.onclick = () => buyUpgrade(name);
+    upgradesDiv.appendChild(btn);
+  }
+  permUpDiv.innerHTML = "";
+  for (let name in permanentUpgrades) {
+    const up = permanentUpgrades[name];
+    const btn = document.createElement('button');
+    btn.className = 'upgradeBtn';
+    btn.textContent = `${name} - ${up.cost}`;
+    btn.disabled = up.bought;
+    btn.onclick = () => buyPermanentUpgrade(name);
+    permUpDiv.appendChild(btn);
+  }
+}
+
+function spawnFloatingText(msg) {
+  const text = document.createElement('div');
+  text.className = 'floatingText';
+  text.textContent = msg;
+  text.style.left = Math.random() * window.innerWidth + 'px';
+  text.style.top = Math.random() * window.innerHeight + 'px';
+  text.style.color = `hsl(${Math.random()*360}, 100%, 70%)`;
+  document.body.appendChild(text);
+  let y = parseFloat(text.style.top);
+  const interval = setInterval(() => {
+    y -= 1.5;
+    text.style.top = y + 'px';
+    if (y < -30) { clearInterval(interval); text.remove(); }
+  }, 16);
+}
+
+clickButton.onclick = () => {
+  totalClicks += clicksPerClick;
+  spawnFloatingText("+" + clicksPerClick + " Clicks!");
+  updateUI();
+};
+
+function buyUpgrade(name) {
+  const up = upgrades[name];
+  if (totalClicks >= up.cost) {
+    totalClicks -= up.cost;
+    up.owned++;
+    autoClicks += up.cps;
+    up.cost = Math.floor(up.cost * (name === "Peasant" ? 1.25 : 1.75));
+    spawnFloatingText(`${name} bought!`);
+    updateUI();
+  }
+}
+
+function buyPermanentUpgrade(name) {
+  const up = permanentUpgrades[name];
+  if (!up.bought && totalClicks >= up.cost) {
+    totalClicks -= up.cost;
+    up.bought = true;
+    if (up.effect === "double_clicks") clicksPerClick *= 2;
+    else if (up.effect === "double_auto") autoClicks *= 2;
+    else if (up.effect === "clicks_plus_5") clicksPerClick += 5;
+    spawnFloatingText(`${name} acquired!`);
+    updateUI();
+  }
+}
+
+// Passive messages occasionally
+setInterval(() => {
+  if (Math.random() < 0.35) {
+    const msg = passiveMessages[Math.floor(Math.random()*passiveMessages.length)];
+    spawnFloatingText(msg);
+  }
+}, 1500);
+
+// Auto clicks
+setInterval(() => {
+  totalClicks += autoClicks;
+  updateUI();
+}, 1000);
+
+updateUI();
+</script>
+</body>
+</html>
