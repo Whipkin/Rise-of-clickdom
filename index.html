@@ -1,93 +1,29 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Rise of Clickdoms</title>
 <link rel="icon" type="image/png" href="Rise.png">
 <style>
-  body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-  }
-
-  /* Moving two-tone background with subtle repeating dots */
+  body { margin:0; padding:0; overflow:hidden; font-family: Arial,sans-serif; }
+  /* Moving two-tone background */
   body::before {
-    content: "";
-    position: fixed;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: repeating-linear-gradient(
-      45deg,
-      #d4b483 0px,
-      #d4b483 20px,
-      #c99f6c 20px,
-      #c99f6c 40px
-    );
-    z-index: -2;
-    animation: bgmove 10s linear infinite;
+    content:""; position:fixed; top:-50%; left:-50%; width:200%; height:200%;
+    background: repeating-linear-gradient(45deg,#d4b483 0 20px,#c99f6c 20px 40px);
+    z-index:-2; animation:bgmove 10s linear infinite;
   }
-
-  @keyframes bgmove {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(30px); }
-    100% { transform: translateY(0); }
-  }
-
-  #clickButton {
-    position: absolute;
-    left: 50%;
-    top: 65%;
-    transform: translate(-50%, -50%);
-    width: 180px;
-    height: 80px;
-    font-size: 24px;
-    cursor: pointer;
-  }
-
-  #clicksCounter, #cpsCounter {
-    position: absolute;
-    font-size: 24px;
-    font-weight: bold;
-    color: white;
-    text-shadow: 1px 1px 3px black;
-  }
-  #clicksCounter { left: 20px; top: 20px; }
-  #cpsCounter { left: 50%; top: 20px; transform: translateX(-50%); }
-
-  #upgradesContainer, #permUpgradesContainer {
-    position: absolute;
-    width: 200px;
-  }
-  #upgradesContainer { right: 20px; top: 100px; }
-  #permUpgradesContainer { left: 20px; top: 100px; }
-
-  .upgradeButton {
-    display: block;
-    margin: 10px 0;
-    width: 100%;
-    font-size: 16px;
-    cursor: pointer;
-  }
-
-  .worker {
-    font-size: 16px;
-    margin: 4px 0;
-    color: white;
-    text-shadow: 1px 1px 2px black;
-  }
-
-  .floatingText {
-    position: absolute;
-    font-weight: bold;
-    pointer-events: none;
-    font-size: 18px;
-    text-shadow: 1px 1px 2px black;
-  }
+  @keyframes bgmove {0%{transform:translateY(0);}50%{transform:translateY(30px);}100%{transform:translateY(0);}}
+  #clickButton { position:absolute; left:50%; top:65%; transform:translate(-50%,-50%); width:180px; height:80px; font-size:24px; cursor:pointer; }
+  #clicksCounter,#cpsCounter { position:absolute; font-size:24px; font-weight:bold; color:white; text-shadow:1px 1px 3px black; }
+  #clicksCounter { left:20px; top:20px; }
+  #cpsCounter { left:50%; top:20px; transform:translateX(-50%); }
+  #upgradesContainer,#workersContainer,#pageButtons { position:absolute; width:200px; }
+  #upgradesContainer { right:20px; top:100px; }
+  #workersContainer { left:20px; top:100px; }
+  #pageButtons { left:20px; bottom:20px; }
+  .upgradeButton,.workerButton,.pageButton { display:block; margin:10px 0; width:100%; font-size:16px; cursor:pointer; }
+  .floatingText { position:absolute; font-weight:bold; pointer-events:none; font-size:18px; text-shadow:1px 1px 2px black; }
+  #debugMenu { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#222; color:white; padding:10px; display:none; z-index:10; }
 </style>
 </head>
 <body>
@@ -97,144 +33,145 @@
 <button id="clickButton">Click Me!</button>
 
 <div id="upgradesContainer"></div>
-<div id="permUpgradesContainer"></div>
-<div id="workersContainer" style="position:absolute; left:50%; top:30%; transform:translateX(-50%); color:white;"></div>
+<div id="workersContainer"></div>
+<div id="pageButtons"></div>
+
+<div id="debugMenu">
+  <label>Clicks: <input type="number" id="dbgClicks"></label><br>
+  <label>CPS: <input type="number" id="dbgCPS"></label><br>
+  <label>Auto Clicks: <input type="number" id="dbgAuto"></label><br>
+  <button onclick="applyDebug()">Apply</button>
+  <button onclick="document.getElementById('debugMenu').style.display='none'">Close</button>
+</div>
 
 <script>
-let totalClicks = 0;
-let clicksPerClick = 1;
-let autoClicks = 0;
-let currentUpgradePage = 0;
+let totalClicks=0, clicksPerClick=1, autoClicks=0, currentWorkerPage=0;
 
-const passiveMessages = [
-  "Keep clickin', you glorious bastard!",
-  "God damn, your fingers on FIRE 🔥",
-  "Click harder, bitch!",
-  "The All Mighty said ‘DAMN!’ after that click.",
-  "Your mouse literally combusted. Worth it."
+const passiveMessages=["Keep clickin', you glorious bastard!","God damn, your fingers on FIRE 🔥","Click harder, bitch!","The All Mighty said ‘DAMN!’ after that click.","Your mouse literally combusted. Worth it."];
+
+// ---------------- Workers ----------------
+const workersPages=[
+  [
+    {name:"Peasant", cost:50, cps:1, owned:0},
+    {name:"Knight", cost:200, cps:5, owned:0},
+    {name:"Lord", cost:1000, cps:20, owned:0},
+    {name:"Farmer", cost:500, cps:10, owned:0},
+    {name:"Squire", cost:300, cps:8, owned:0}
+  ],
+  [
+    {name:"Grandma", cost:5000, cps:250, owned:0},
+    {name:"The All Mighty", cost:10000, cps:5000, owned:0},
+    {name:"Super Worker", cost:1e6, cps:10000, owned:0},
+    {name:"Mega Finger", cost:1e7, cps:1e5, owned:0},
+    {name:"Ultimate Clicker", cost:1e8, cps:1e6, owned:0}
+  ],
+  [
+    {name:"Hyper Worker", cost:5e8, cps:5e5, owned:0},
+    {name:"God Hand", cost:1e9, cps:1e6, owned:0},
+    {name:"Lightning Finger", cost:2e9, cps:2e6, owned:0},
+    {name:"Master Clicker", cost:3e9, cps:3e6, owned:0},
+    {name:"Infinite Tapper", cost:5e9, cps:5e6, owned:0}
+  ]
 ];
 
-const workers = [
-  {name:"Peasant", cost:50, cps:1, owned:0},
-  {name:"Knight", cost:250, cps:5, owned:0},
-  {name:"Lord", cost:1000, cps:20, owned:0},
-  {name:"Grandma", cost:5000, cps:250, owned:0},
-  {name:"The All Mighty", cost:10000, cps:5000, owned:0},
-  {name:"You can't get this", cost:1e6, cps:10000, owned:0},
-  {name:"Super Worker", cost:1e7, cps:1e5, owned:0},
-  {name:"Mega Finger", cost:1e8, cps:1e6, owned:0},
-  {name:"Ultimate Clicker", cost:1e9, cps:1e7, owned:0}
-];
-
-const permanentUpgrades = [
+const permanentUpgrades=[
   {name:"Extra Power!", cost:500, effect:"double_clicks", bought:false},
   {name:"Super Click!", cost:2000, effect:"double_auto", bought:false},
-  {name:"Golden Fingers", cost:5000, effect:"clicks_plus_5", bought:false},
-  {name:"Hyper Clicker", cost:10000, effect:"triple_clicks", bought:false},
-  {name:"Auto God Mode", cost:20000, effect:"quad_auto", bought:false}
+  {name:"Golden Fingers", cost:5000, effect:"clicks_plus_5", bought:false}
 ];
 
-// ---------------- Click & UI ----------------
-const clickBtn = document.getElementById('clickButton');
-const clicksCounter = document.getElementById('clicksCounter');
-const cpsCounter = document.getElementById('cpsCounter');
-const upgradesContainer = document.getElementById('upgradesContainer');
-const permContainer = document.getElementById('permUpgradesContainer');
-const workersContainer = document.getElementById('workersContainer');
+// ---------------- UI ----------------
+const clickBtn=document.getElementById('clickButton');
+const clicksCounter=document.getElementById('clicksCounter');
+const cpsCounter=document.getElementById('cpsCounter');
+const upgradesContainer=document.getElementById('upgradesContainer');
+const workersContainer=document.getElementById('workersContainer');
+const pageButtons=document.getElementById('pageButtons');
+const debugMenu=document.getElementById('debugMenu');
 
-clickBtn.onclick = () => {
-  totalClicks += clicksPerClick;
-  spawnFloatingText("+"+clicksPerClick);
-  updateUI();
-};
+clickBtn.onclick=()=>{totalClicks+=clicksPerClick; spawnFloatingText("+"+clicksPerClick); updateUI();};
 
+// ---------------- Update UI ----------------
 function updateUI(){
-  clicksCounter.textContent = "Clicks: "+Math.floor(totalClicks);
-  cpsCounter.textContent = "CPS: "+autoClicks;
+  clicksCounter.textContent="Clicks: "+Math.floor(totalClicks);
+  cpsCounter.textContent="CPS: "+autoClicks;
 
-  // Show current page of 3 upgrades
-  upgradesContainer.innerHTML = "";
-  for(let i=currentUpgradePage*3;i<Math.min(workers.length,(currentUpgradePage+1)*3);i++){
-    let w = workers[i];
-    let btn = document.createElement('button');
-    btn.textContent = `${w.name} (${w.owned}) - ${Math.floor(w.cost)}`;
-    btn.className="upgradeButton";
-    btn.onclick = () => buyWorker(i);
-    upgradesContainer.appendChild(btn);
-  }
-
-  permContainer.innerHTML = "";
-  for(let i=0;i<permanentUpgrades.length;i++){
-    let u = permanentUpgrades[i];
-    let btn = document.createElement('button');
-    btn.textContent = `${u.name} - ${u.cost}`;
-    btn.className="upgradeButton";
+  // Upgrades
+  upgradesContainer.innerHTML="";
+  permanentUpgrades.forEach(u=>{
+    let btn=document.createElement('button');
+    btn.className="upgradeButton"; btn.textContent=`${u.name} - ${u.cost}`;
     if(u.bought) btn.disabled=true;
-    btn.onclick = () => buyPermanent(i);
-    permContainer.appendChild(btn);
-  }
+    btn.onclick=()=>buyPermanent(u);
+    upgradesContainer.appendChild(btn);
+  });
 
-  workersContainer.innerHTML = "";
-  workers.forEach(w=>workersContainer.innerHTML += `<div class="worker">${w.name} (${w.owned})</div>`);
+  // Workers
+  workersContainer.innerHTML="";
+  workersPages[currentWorkerPage].forEach(w=>{
+    let btn=document.createElement('button');
+    btn.className="workerButton"; btn.textContent=`${w.name} (${w.owned}) - ${Math.floor(w.cost)}`;
+    btn.onclick=()=>buyWorker(w);
+    workersContainer.appendChild(btn);
+  });
+
+  // Page Buttons
+  pageButtons.innerHTML="";
+  for(let i=0;i<workersPages.length;i++){
+    let btn=document.createElement('button'); btn.className="pageButton"; btn.textContent="Page "+(i+1);
+    btn.onclick=()=>{currentWorkerPage=i; updateUI();};
+    pageButtons.appendChild(btn);
+  }
 }
 
-function buyWorker(idx){
-  let w = workers[idx];
+// ---------------- Buy functions ----------------
+function buyWorker(w){
   if(totalClicks>=w.cost){
-    totalClicks -= w.cost;
-    w.owned +=1;
-    autoClicks += w.cps;
-    w.cost *= 1.75;
+    totalClicks-=w.cost; w.owned+=1; autoClicks+=w.cps; w.cost*=1.75;
     spawnFloatingText(`${w.name} bought!`);
-    if((idx+1)%3===0) currentUpgradePage = (currentUpgradePage+1) % Math.ceil(workers.length/3);
     updateUI();
   }
 }
-
-function buyPermanent(idx){
-  let u = permanentUpgrades[idx];
+function buyPermanent(u){
   if(totalClicks>=u.cost && !u.bought){
-    totalClicks -= u.cost;
-    u.bought=true;
-    switch(u.effect){
-      case "double_clicks": clicksPerClick *=2; break;
-      case "double_auto": autoClicks *=2; break;
-      case "clicks_plus_5": clicksPerClick +=5; break;
-      case "triple_clicks": clicksPerClick *=3; break;
-      case "quad_auto": autoClicks *=4; break;
-    }
+    totalClicks-=u.cost; u.bought=true;
+    if(u.effect=="double_clicks") clicksPerClick*=2;
+    if(u.effect=="double_auto") autoClicks*=2;
+    if(u.effect=="clicks_plus_5") clicksPerClick+=5;
     spawnFloatingText(`${u.name} bought!`);
     updateUI();
   }
 }
 
+// ---------------- Floating Text ----------------
 function spawnFloatingText(text){
-  let lbl = document.createElement('div');
-  lbl.className="floatingText";
-  lbl.textContent = text;
-  lbl.style.left = Math.random()*window.innerWidth + "px";
-  lbl.style.top = Math.random()*window.innerHeight + "px";
-  lbl.style.color = `rgb(${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)})`;
-  document.body.appendChild(lbl);
-  setTimeout(()=>{ lbl.remove(); },2000);
+  let lbl=document.createElement('div'); lbl.className="floatingText"; lbl.textContent=text;
+  lbl.style.left=Math.random()*window.innerWidth+"px"; lbl.style.top=Math.random()*window.innerHeight+"px";
+  lbl.style.color=`rgb(${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)})`;
+  document.body.appendChild(lbl); setTimeout(()=>lbl.remove(),2000);
 }
 
-// ---------------- Passive ----------------
-setInterval(()=>{
-  if(Math.random()<0.35){
-    let msg = passiveMessages[Math.floor(Math.random()*passiveMessages.length)];
-    spawnFloatingText(msg);
-  }
-}, 1000);
+// ---------------- Passive Messages ----------------
+setInterval(()=>{ if(Math.random()<0.35){ spawnFloatingText(passiveMessages[Math.floor(Math.random()*passiveMessages.length)]); } },1000);
 
 // ---------------- Auto Click ----------------
-setInterval(()=>{
-  totalClicks += autoClicks/2; // every 0.5s
+setInterval(()=>{ totalClicks+=autoClicks/2; updateUI(); },500);
+
+// ---------------- Debug Menu ----------------
+let keyBuffer="";
+document.addEventListener('keydown',e=>{
+  keyBuffer+=e.key;
+  if(keyBuffer.includes("4193")) { debugMenu.style.display="block"; keyBuffer=""; document.getElementById('dbgClicks').value=totalClicks; document.getElementById('dbgCPS').value=clicksPerClick; document.getElementById('dbgAuto').value=autoClicks;}
+});
+function applyDebug(){
+  totalClicks=parseFloat(document.getElementById('dbgClicks').value);
+  clicksPerClick=parseFloat(document.getElementById('dbgCPS').value);
+  autoClicks=parseFloat(document.getElementById('dbgAuto').value);
+  debugMenu.style.display="none";
   updateUI();
-}, 500);
+}
 
 updateUI();
 </script>
 </body>
 </html>
-
